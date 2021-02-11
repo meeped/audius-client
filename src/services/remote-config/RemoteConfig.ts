@@ -36,7 +36,12 @@ export enum IntKeys {
    * Service monitoring request analytics sample rate (int out of 100). A value of 50
    * means that half of all requests are recorded.
    */
-  SERVICE_MONITOR_REQUEST_SAMPLE_RATE = 'SERVICE_MONITOR_REQUEST_SAMPLE_RATE'
+  SERVICE_MONITOR_REQUEST_SAMPLE_RATE = 'SERVICE_MONITOR_REQUEST_SAMPLE_RATE',
+
+  /**
+   * Number of random (recommended) tracks to fetch and add to the autoplay queue
+   */
+  AUTOPLAY_LIMIT = 'AUTOPLAY_LIMIT'
 }
 
 export enum BooleanKeys {

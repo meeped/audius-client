@@ -22,6 +22,7 @@ import { encodeHashId } from 'utils/route/hashIds'
 import { StemTrackMetadata } from 'models/Track'
 import { SearchKind } from 'containers/search-page/store/types'
 import { processSearchResults } from './helper'
+import { getRemoteVar, IntKeys } from '../remote-config'
 
 declare global {
   interface Window {
@@ -32,6 +33,7 @@ declare global {
 const ENDPOINT_MAP = {
   trending: '/tracks/trending',
   trendingIds: '/tracks/trending/ids',
+  random: '/tracks/random',
   following: (userId: OpaqueID) => `/users/${userId}/following`,
   followers: (userId: OpaqueID) => `/users/${userId}/followers`,
   trackRepostUsers: (trackId: OpaqueID) => `/tracks/${trackId}/reposts`,
@@ -58,7 +60,7 @@ const ENDPOINT_MAP = {
 const TRENDING_LIMIT = 100
 
 type QueryParams = {
-  [key: string]: string | number | undefined | boolean | Array<string> | null
+  [key: string]: string | number | undefined | boolean | string[] | null
 }
 
 export type GetTrackArgs = {
@@ -81,6 +83,12 @@ type GetTrendingArgs = {
 type GetTrendingIdsArgs = {
   limit?: number
   genre?: Nullable<string>
+}
+
+type GetRandomArgs = {
+  genre: Nullable<string>
+  exclusionList: number[]
+  currentUserId: Nullable<ID>
 }
 
 type GetFollowingArgs = {
@@ -306,6 +314,28 @@ class AudiusAPIClient {
       }
     )
     return res
+  }
+
+  async getRandom({ genre, exclusionList, currentUserId }: GetRandomArgs) {
+    this._assertInitialized()
+    const encodedCurrentUserId = encodeHashId(currentUserId)
+    const params = {
+      genre,
+      limit: getRemoteVar(IntKeys.AUTOPLAY_LIMIT) || 10,
+      exclusion_list:
+        exclusionList.length > 0 ? exclusionList.map(String) : undefined,
+      user_id: encodedCurrentUserId || undefined
+    }
+    const randomResponse: Nullable<APIResponse<
+      APITrack[]
+    >> = await this._getResponse(ENDPOINT_MAP.random, params)
+
+    if (!randomResponse) return []
+
+    const adapted = randomResponse.data
+      .map(adapter.makeTrack)
+      .filter(removeNullable)
+    return adapted
   }
 
   async getFollowing({
